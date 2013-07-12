@@ -114,7 +114,7 @@ int ReadUART_NOBLOCK2(void)
 }
 
 /* Non-blocking version */
-int ReadUART_NOBLOCK2(void)
+int ReadUART(void)
 {
 	register int read=EOF;
 
