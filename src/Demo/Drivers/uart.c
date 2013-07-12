@@ -3,16 +3,33 @@
 
 #include "uart.h"
 
+/* Function to be called when data is received on UART. */
+static void RedvUART_interrupt(void);
+
 /* Definition of variables from header file. */
 xSemaphoreHandle ReadSemaphore;
 xSemaphoreHandle WriteSemaphore;
 xSemaphoreHandle DataAvailSemaphore;
+
+static void RedvUART_interrupt(void)
+{
+	/* Wait for byte to be completely received. This may induce som delay
+	 * in the running process. More exactly the time it takes to receive
+	 * one byte; 1/115200 seconds, which is about 8.68 microseconds. Even
+	 * rounding up to 9 µs compensating for interrupt overhead and then some
+	 * for good measure, that is not an awful lot. But be aware.
+	 * Be very aware.
+	 */
+	while (IOWord(UART0_FR)&FR_RXFE);
+	xSemaphoreGive(DataAvailSemaphore);
+}
 
 int SetupUART(void)
 {
 	/* Mutexes have priority inheritance, semaphores do not. Free choice. */
 	vSemaphoreCreateBinary(ReadSemaphore);
 	vSemaphoreCreateBinary(WriteSemaphore);
+	vSemaphoreCreateBinary(DataAvailSemaphore);
 	
 	/* TODO: Set speed. */
 	
@@ -34,13 +51,10 @@ int SetupUART(void)
 }
 
 /* These functions should be inlined where possible, to give more predictable
- * stack usage to functions like putchar() etc. Therefore they MUST be put in
+ * stack usage to functions like putchar() etc. To do that they MUST be put in
  * the header file! TODO */
 
-/* Is it possible to remove the temp variable? */
-
-/* TODO: The while loops are basically a busy-wait. This means that they will
- * not yield if they are blocking. Set up some interrupt or similar?
+/* TODO: Set up the FIFO wait for at least read to use interrupts.
  */
 
 int WriteUART(int ch)
