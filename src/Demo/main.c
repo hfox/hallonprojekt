@@ -27,7 +27,7 @@ void led_task(void *pParam)
 		SetGpio(16, i);
 		/* Delay */
 		vTaskDelay(1000);
-		puts("LED status change\r");
+		/*if(!i) puts("LED\r");*/
 	}
 }
 
