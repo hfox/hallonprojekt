@@ -13,6 +13,9 @@
 /* For EOF */
 #include <stdio.h>
 
+/* For UART usage */
+#include "uart.h"
+
 /* To ensure arrno is not a macro, but instead an external variable. */
 #include <errno.h>
 #undef errno

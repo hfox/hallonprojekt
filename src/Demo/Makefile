@@ -30,8 +30,7 @@ demo.syms: demo.elf
 
 demo.elf: LDFLAGS += -L "/usr/local/lib/gcc/arm-none-eabi/4.7.3" -lgcc
 demo.elf: LDFLAGS += -L "/usr/local/arm-none-eabi/lib" -lc
-#demo.elf: LIBS += "../FreeRTOS.a" "../Drivers.a"
-demo.elf: LIBS += croutine.o  gpio.o  heap_4.o  interrupts.o  list.o  portisr.o  port.o  queue.o  tasks.o  uart.o
+demo.elf: LIBS += "../FreeRTOS.a" "../Drivers.a"
 demo.elf: $(OBJECTS)
 	$(Q)$(LD) $(LIBS) $(OBJECTS) -Map demo.map -o $@ -T $(LINKER_SCRIPT) $(LDFLAGS)
 
