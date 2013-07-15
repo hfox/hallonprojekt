@@ -1,7 +1,13 @@
+/* Right now we have an ugly polling UART. TODO. Undef this to try the
+ * interrupt driven. Might not work at all. */
+#define UART_POLLING
+
 /* For EOF */
 #include <stdio.h>
 
 #include "uart.h"
+
+#include "queue.h"
 
 /* Function to be called when data is received on UART. */
 static void RecvUART_interrupt(void);
@@ -9,12 +15,16 @@ static void RecvUART_interrupt(void);
 /* Definition of variables from header file. */
 xSemaphoreHandle ReadSemaphore;
 xSemaphoreHandle WriteSemaphore;
+#ifdef UART_POLLING
 xSemaphoreHandle DataAvailSemaphore;
+#endif UART_POLLING
 
+/* Interrupt handler for non-polling UART */
+#ifdef UART_POLLING
 static void RecvUART_interrupt(void)
 {
 	/* TODO: Disable interrupt */
-	/* Wait for byte to be completely received. This may induce som delay
+	/* Wait for byte to be completely received. This will give some jitter
 	 * in the running process. More exactly the time it takes to receive
 	 * one byte; 1/115200 seconds, which is about 8.68 microseconds. Even
 	 * rounding up to 9 µs compensating for interrupt overhead and then some
@@ -24,6 +34,7 @@ static void RecvUART_interrupt(void)
 	while (IOWord(UART0_FR)&FR_RXFE);
 	xSemaphoreGive(DataAvailSemaphore);
 }
+#endif /*UART_POLLING*/
 
 int SetupUART(void)
 {
@@ -88,34 +99,21 @@ int ReadUART_BLOCK(void)
 	return read;
 }
 
-/* Non-blocking version */
-int ReadUART_NOBLOCK(void)
-{
-	register int read=EOF;
-
-	/* If semaphore can be taken */
-	xSemaphoreTake(WriteSemaphore,portMAX_DELAY);
-
-	/* If there are bytes available */
-	if(!IOWord(UART0_FR)&FR_RXFE) {
-		read=IOWord(UART0_DR)&DR_DATA;
-	}else{
-		vTaskDelay(1);
-	}
-	/* Return the semaphore */
-	xSemaphoreGive(ReadSemaphore);
-
-	/* Return the character */
-	return read;
-}
+#define w(_X) WriteUART(_X);WriteUART('\n')
 
 /* Blocking version without busy wait */
 int ReadUART(void)
 {
 	register int read;
-
+	
 	/* Wait for read subsystem to be available */
-	xSemaphoreTake(WriteSemaphore,portMAX_DELAY);
+	xSemaphoreTake(ReadSemaphore,portMAX_DELAY);
+
+#ifdef UART_POLLING
+
+	while(IOWord(UART0_FR)&FR_RXFE) vTaskDelay(10);
+
+#else /* UART_POLLING */
 
 	if(IOWord(UART0_FR)&FR_RXFE) {
 		/* If there are no bytes available in FIFO, take the
@@ -126,6 +124,8 @@ int ReadUART(void)
 		/* TODO: Start interrupt */
 		xSemaphoreTake(DataAvailSemaphore,portMAX_DELAY);
 	}
+
+#endif /*UART_POLLING*/
 
 	read=IOWord(UART0_DR)&DR_DATA;
 	
