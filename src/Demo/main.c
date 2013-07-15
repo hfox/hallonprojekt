@@ -1,8 +1,9 @@
 #include <FreeRTOS.h>
 #include <task.h>
 
-#include "Drivers/interrupts.h"
-#include "Drivers/gpio.h"
+#include "interrupts.h"
+#include "gpio.h"
+#include "uart.h"
 
 #include <stdio.h>
 
@@ -10,10 +11,8 @@ void echo_task(void *pParam) {
 	char c;
 
 	while(1) {
-		c=ReadUART();
-		WriteUART(c);
-/*		c=getchar();
-		putchar(c);*/
+		c=getchar();
+		putchar(c);
 	}
 }
 

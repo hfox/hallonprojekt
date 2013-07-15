@@ -1,8 +1,8 @@
-Kompilera och länka mot FreeRTOS för Raspberry Pi tillgängligt på
-https://github.com/jameswalmsley/RaspberryPi-FreeRTOS
+# Demo
 
-libc-arch.c är den implementationsspecifika delen av newlib. Många av filerna,
-till exempel de i Drivers, går att återanvända och borde därmed brytas ut.
+Skall ha två processer; en för att blinka ACT-LED och en för echo på konsolen.
 
-Kompilerar inte just nu. Behöver även avbrottsdriven UART för att ge processer
+libc-arch.c är den implementationsspecifika delen av newlib. Borde brytas ut.
+
+Kompilerar inte just nu. Behöver avbrottsdriven UART för att ge processer
 tid då man väntar på I/O.

@@ -4,15 +4,16 @@
 #include "uart.h"
 
 /* Function to be called when data is received on UART. */
-static void RedvUART_interrupt(void);
+static void RecvUART_interrupt(void);
 
 /* Definition of variables from header file. */
 xSemaphoreHandle ReadSemaphore;
 xSemaphoreHandle WriteSemaphore;
 xSemaphoreHandle DataAvailSemaphore;
 
-static void RedvUART_interrupt(void)
+static void RecvUART_interrupt(void)
 {
+	/* TODO: Disable interrupt */
 	/* Wait for byte to be completely received. This may induce som delay
 	 * in the running process. More exactly the time it takes to receive
 	 * one byte; 1/115200 seconds, which is about 8.68 microseconds. Even
@@ -93,25 +94,6 @@ int ReadUART_NOBLOCK(void)
 	register int read=EOF;
 
 	/* If semaphore can be taken */
-	if(!xSemaphoreTake(WriteSemaphore,0)) {
-		/* If there are bytes available */
-		if(!IOWord(UART0_FR)&FR_RXFE) {
-			read=IOWord(UART0_DR)&DR_DATA;
-		}
-		/* Return the semaphore */
-		xSemaphoreGive(ReadSemaphore);
-	}
-
-	/* Return the character */
-	return read;
-}
-
-/* Non-blocking version */
-int ReadUART_NOBLOCK2(void)
-{
-	register int read=EOF;
-
-	/* If semaphore can be taken */
 	xSemaphoreTake(WriteSemaphore,portMAX_DELAY);
 
 	/* If there are bytes available */
@@ -127,21 +109,27 @@ int ReadUART_NOBLOCK2(void)
 	return read;
 }
 
-/* Non-blocking version */
+/* Blocking version without busy wait */
 int ReadUART(void)
 {
-	register int read=EOF;
+	register int read;
 
-	/* If semaphore can be taken */
+	/* Wait for read subsystem to be available */
 	xSemaphoreTake(WriteSemaphore,portMAX_DELAY);
 
-	/* If there are bytes available */
-	if(!IOWord(UART0_FR)&FR_RXFE) {
-		read=IOWord(UART0_DR)&DR_DATA;
-	}else{
-		vTaskDelay(1);
+	if(IOWord(UART0_FR)&FR_RXFE) {
+		/* If there are no bytes available in FIFO, take the
+		 * semaphore, set the data receive interrupt, and wait
+		 * for the semaphore to be freed. The FreeRTOS forums
+		 * said it was a good idea. */
+		xSemaphoreTake(DataAvailSemaphore,portMAX_DELAY);
+		/* TODO: Start interrupt */
+		xSemaphoreTake(DataAvailSemaphore,portMAX_DELAY);
 	}
-	/* Return the semaphore */
+
+	read=IOWord(UART0_DR)&DR_DATA;
+	
+	/* Return the read subsystem semaphore */
 	xSemaphoreGive(ReadSemaphore);
 
 	/* Return the character */
