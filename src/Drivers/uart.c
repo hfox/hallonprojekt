@@ -9,18 +9,20 @@
 
 #include "queue.h"
 
+#ifndef UART_POLLING
 /* Function to be called when data is received on UART. */
 static void RecvUART_interrupt(void);
+#endif /* UART_POLLING */
 
 /* Definition of variables from header file. */
 xSemaphoreHandle ReadSemaphore;
 xSemaphoreHandle WriteSemaphore;
-#ifdef UART_POLLING
+#ifndef UART_POLLING
 xSemaphoreHandle DataAvailSemaphore;
-#endif UART_POLLING
+#endif /* UART_POLLING */
 
 /* Interrupt handler for non-polling UART */
-#ifdef UART_POLLING
+#ifndef UART_POLLING
 static void RecvUART_interrupt(void)
 {
 	/* TODO: Disable interrupt */
@@ -41,7 +43,9 @@ int SetupUART(void)
 	/* Mutexes have priority inheritance, semaphores do not. Free choice. */
 	vSemaphoreCreateBinary(ReadSemaphore);
 	vSemaphoreCreateBinary(WriteSemaphore);
+#ifndef UART_POLLING
 	vSemaphoreCreateBinary(DataAvailSemaphore);
+#endif /* UART_POLLING */
 	
 	/* TODO: Set speed. */
 	
@@ -59,6 +63,11 @@ int SetupUART(void)
 	/* Setup FIFOs */
 	SetBit(UART0_LCRH,LCRH_FEN);
 	
+#ifndef UART_POLLING
+	/* TODO: Setup interrupts */
+	
+#endif /* UART_POLLING */
+
 	return 0;
 }
 
@@ -125,7 +134,7 @@ int ReadUART(void)
 		xSemaphoreTake(DataAvailSemaphore,portMAX_DELAY);
 	}
 
-#endif /*UART_POLLING*/
+#endif /* UART_POLLING */
 
 	read=IOWord(UART0_DR)&DR_DATA;
 	
