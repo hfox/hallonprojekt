@@ -14,8 +14,6 @@ LINKER_SCRIPT=raspberrypi.ld
 all: demo.list demo.img demo.syms
 	@$(SIZE) demo.elf
 
-.PHONY: demo
-demo: demo.img demo.list demo.syms
 demo.img: demo.elf
 	$(Q)$(PRETTY) IMAGE $(MODULE_NAME) $@
 	$(Q)$(OBJCOPY) demo.elf -O binary $@
@@ -30,9 +28,13 @@ demo.syms: demo.elf
 
 demo.elf: LDFLAGS += -L "/usr/local/lib/gcc/arm-none-eabi/4.7.3" -lgcc
 demo.elf: LDFLAGS += -L "/usr/local/arm-none-eabi/lib" -lc
-demo.elf: LIBS += "../Drivers.a" "../FreeRTOS.a"
-demo.elf: $(OBJECTS)
+demo.elf: LIBS = ../Drivers.a ../FreeRTOS.a
+demo.elf: $(OBJECTS) .FORCE
 	$(Q)$(LD) $(OBJECTS) $(LIBS) -Map demo.map -o $@ -T $(LINKER_SCRIPT) $(LDFLAGS)
 
 distclean: clean
 	rm -rf demo.map build
+
+# Declare .FORCE to force rebuilds
+.PHONY: .FORCE
+.FORCE:
