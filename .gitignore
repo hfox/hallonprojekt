@@ -1,0 +1,8 @@
+src/build
+src/demo.elf
+src/demo.img
+src/Drivers/Drivers.a
+src/Drivers.a
+src/FreeRTOS/FreeRTOS.a
+src/FreeRTOS.a
+src/Demo/demo.*
