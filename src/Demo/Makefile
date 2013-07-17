@@ -2,7 +2,7 @@
 #	Makefile for FreeRTOS archive on Raspberry Pi
 #
 BASE=$(shell pwd)/../
-BUILD_DIR=$(shell pwd)/build/
+BUILD_DIR=$(shell pwd)/../build/
 
 MODULE_NAME="Demo"
 
