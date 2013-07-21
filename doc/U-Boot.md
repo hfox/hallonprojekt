@@ -3,6 +3,9 @@
 U-Boot står för universal boot loader, och är ett bootsystem som finns portat
 till ett flertal system. Det kon boota från i stort sett allt.
 
+Den magiska adressen för att ladda och köra är 0x8000. Alternativt om filen
+är paddad med 32k för avbrottsrutiner, ladda till 0x0 och kör på 0x8000.
+
 # Konfiguration
 
 ## boot.scr
