@@ -21,12 +21,16 @@
 #undef errno
 extern int errno;
 
+/* To supress warnings about unused parameters */
+#define UNUSED(_PARAM) (void)(_PARAM)
+
 /*_exit*/
 
 /*close*/
 /* Close a stream. Stream-less implementation. */
 int _close(int file)
 {
+	UNUSED(file);
 	return -1;
 }
 
@@ -38,6 +42,7 @@ int _close(int file)
 /* Status of open file. By this implementation, all files are said to be
  * character specials. */
 int _fstat(int file, struct stat *st) {
+	UNUSED(file);
 	st->st_mode = S_IFCHR;
 	return 0;
 }
@@ -49,6 +54,7 @@ int _fstat(int file, struct stat *st) {
  * open file is a terminal. */
 int _isatty (int file)
 {
+	UNUSED(file);
 	return 1;
 }
 
@@ -58,47 +64,23 @@ int _isatty (int file)
 /*lseek*/
 /* Seek within a file. Cheap-o implementation. */
 int _lseek(int file, int ptr, int dir){
+	UNUSED(file);
+	UNUSED(ptr);
+	UNUSED(dir);
 	return 0;
 }
 
 /*open*/
 
 /*read*/
-/* Read characters from a file. In this case, only the debug console. */
-/*
+/* Read characters from a file. In this case, only the debug console.
+ * Reading one character at a time should be OK according to the standard;
+ * the caller should check the number of bytes read. Most of the time
+ * we will just read one character of input anyway.
+ */
 int _read (int fd, char* buf, int size)
 {
-	int c;
-	int read=0;
-	const char* end=buf+size;
-	
-	while(read<size){
-		c=ReadUART();
-		if(c==EOF) break;
-		buf[read]=c;
-		read++;
-	}
-	
-	return read;
-}
-*/
-/*int _read (int fd, char* buf, int size)
-{
-	int c;
-	int read=0;
-	const char* end=buf+size;
-	
-	while(read<size){
-		c=ReadUART();
-		if(c==EOF) break;
-		buf[read]=c;
-		read++;
-	}
-	
-	return read;
-}*/
-int _read (int fd, char* buf, int size)
-{
+	UNUSED(fd);
 	if(size<=0) return 0;
 
 	*buf=ReadUART();
@@ -108,9 +90,11 @@ int _read (int fd, char* buf, int size)
 
 /*sbrk*/
 /* Increase program data space. */
-/* TODO: Not thread safe! Can it even be smacked into submission?
+/* NOTE: Due to the nature of this function and newlib, it is only safe to
+ * sbrk positive (which means malloc is safe and free is not), and not to
+ * assume data is linear, as one could infer from manual pages.
  * http://lifecs.likai.org/2010/02/sbrk-is-not-thread-safe.html
- * Could one possibly use malloc from inside this function? */
+ */
 caddr_t _sbrk(int n){
 	/* heap_start is defined by the linker, see raspberrypi.ld */
 	extern void* heap_start;
@@ -137,6 +121,7 @@ caddr_t _sbrk(int n){
 /* Write characters to a file. In this case, only debug console. */
 int _write (int fd, const char* buf, int size)
 {
+	UNUSED(fd);
 	int written=0;
 	while(written<size){
 		WriteUART(buf[written]);
