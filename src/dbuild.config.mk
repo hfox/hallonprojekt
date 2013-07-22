@@ -1,5 +1,5 @@
 #Set correct architecture
-CFLAGS += -march=armv6z -g -Wall
+CFLAGS += -march=armv6z -g -Wall -Wextra
 
 #Set toolchain prefix
 TOOLCHAIN=arm-none-eabi-
