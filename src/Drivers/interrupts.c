@@ -45,7 +45,6 @@ static void irqDisable() {
      asm ("clz\t%0, %1": "=r" (__value): "r" (__arg)); \
      __value; })
 
-
 /**
  *	This is the global IRQ handler on this platform!
  *	It is based on the assembler code found in the Broadcom datasheet.
@@ -81,18 +80,19 @@ void irqHandler()
 	if(tmp & 0x200) {
 		ulMaskedStatus = pRegs->Pending2;
 		irqNumber = 32 + 31;
-		// Clear the interrupts in the basic pending
-		ulMaskedStatus &= ~((1 << 21) | (1 << 22) | (1 << 23) | (1 << 24) | (1 << 25) |(1<<30));
+		// Clear the interrupts in the basic pending reg.
+		ulMaskedStatus &= ~((1 << 21) | (1 << 22) | (1 << 23) | (1 << 24) | (1 << 25) |(1 << 30));
 		if(ulMaskedStatus) {
 			goto emit_interrupt;
 		}
 	}
 
+	// No interrupt avaialbe (Wat)
 	return;
 
 emit_interrupt:
 
-	/* Magicz! */
+	/* Magic. Should be cleaned up and/or clarified. */
 	tmp = ulMaskedStatus - 1;
 	ulMaskedStatus = ulMaskedStatus ^ tmp;
 	tmp = clz(ulMaskedStatus);
@@ -128,7 +128,6 @@ int RegisterInterrupt(int nIRQ, FN_INTERRUPT_HANDLER pfnHandler, void *pParam) {
 		g_VectorTable[nIRQ].pfnHandler = pfnHandler;
 		g_VectorTable[nIRQ].pParam		= pParam;
 	}
-
 	irqEnable();
 	return 0;
 }
