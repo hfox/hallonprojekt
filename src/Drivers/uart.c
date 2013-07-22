@@ -10,22 +10,31 @@
 #include "queue.h"
 
 #ifndef UART_POLLING
-/* Function to be called when data is received on UART. */
-static void RecvUART_interrupt(void);
+
+	#include "gpio.h"
+	#include "interrupts.h"
+
+	/* Function to be called when data is received on UART. */
+	void RecvUART_interrupt(int nIRQ, void* param);
+
 #endif /* UART_POLLING */
 
 /* Definition of variables from header file. */
 xSemaphoreHandle ReadSemaphore;
 xSemaphoreHandle WriteSemaphore;
+
 #ifndef UART_POLLING
-xSemaphoreHandle DataAvailSemaphore;
+	xSemaphoreHandle DataAvailSemaphore;
 #endif /* UART_POLLING */
 
 /* Interrupt handler for non-polling UART */
 #ifndef UART_POLLING
-static void RecvUART_interrupt(void)
+void RecvUART_interrupt(int nIRQ, void* param)
 {
-	/* TODO: Disable interrupt */
+	/* Turn off ACT led, so we see if somethings happening */
+	/* SetGpio(16,1);*/
+	/* Disable interrupt */
+	DisableInterrupt(BCM2835_IRQ_ID_GPIO_0);
 	/* Wait for byte to be completely received. This will give some jitter
 	 * in the running process. More exactly the time it takes to receive
 	 * one byte; 1/115200 seconds, which is about 8.68 microseconds. Even
@@ -34,6 +43,7 @@ static void RecvUART_interrupt(void)
 	 * Be very aware.
 	 */
 	while (IOWord(UART0_FR)&FR_RXFE);
+	/* Signal that bytes are available */
 	xSemaphoreGive(DataAvailSemaphore);
 }
 #endif /*UART_POLLING*/
@@ -64,8 +74,13 @@ int SetupUART(void)
 	SetBit(UART0_LCRH,LCRH_FEN);
 	
 #ifndef UART_POLLING
-	/* TODO: Setup interrupts */
-	
+	/* TODO: Setup interrupt vector(s) */
+	/* RegisterInterrupt(BCM2835_IRQ_ID_GPIO_0,RecvUART_interrupt,NULL); */
+	RegisterInterrupt(49,RecvUART_interrupt,NULL);
+	/*RegisterInterrupt(BCM2835_IRQ_ID_GPIO_0,NULL,NULL);*/
+	/* TODO: Set interrupt on falling edge of GPIO 15(RX) */
+	/* Falling because idle RS232 is held high */
+	EnableGpioDetect(15,DETECT_FALLING);
 #endif /* UART_POLLING */
 
 	return 0;
@@ -108,9 +123,7 @@ int ReadUART_BLOCK(void)
 	return read;
 }
 
-#define w(_X) WriteUART(_X);WriteUART('\n')
-
-/* Blocking version without busy wait */
+/* Blocking version with optional busy wait */
 int ReadUART(void)
 {
 	register int read;
@@ -130,9 +143,15 @@ int ReadUART(void)
 		 * for the semaphore to be freed. The FreeRTOS forums
 		 * said it was a good idea. */
 		xSemaphoreTake(DataAvailSemaphore,portMAX_DELAY);
-		/* TODO: Start interrupt */
+		/* Start interrupt */
+		EnableInterrupt(BCM2835_IRQ_ID_GPIO_0);
+		/* Wait for interrupt to free semaphore */
 		xSemaphoreTake(DataAvailSemaphore,portMAX_DELAY);
-	}
+
+		/* Read byte and give back semaphore */
+		read=IOWord(UART0_DR)&DR_DATA;
+		xSemaphoreGive(DataAvailSemaphore);
+	} else
 
 #endif /* UART_POLLING */
 
