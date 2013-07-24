@@ -48,58 +48,43 @@ static void irqDisable() {
 /**
  *	This is the global IRQ handler on this platform!
  *	It is based on the assembler code found in the Broadcom datasheet.
- *  "Upgraded", made to be more like the Broadcom version.
+ * "
  **/
 void irqHandler()
 {
 	register unsigned long ulMaskedStatus;
 	register unsigned long irqNumber;
-	register unsigned long tmp;
 
 	ulMaskedStatus = pRegs->IRQBasic;
-	tmp = ulMaskedStatus & 0x00000300;			// Check if anything pending in pr1/pr2.
 
-	/* Bits 7 through 0 represent "Basic interrupts" */
+	/* Bits 7 through 0 in IRQBasic represent interrupts 64-71 */
 	if (ulMaskedStatus & 0xFF) {
-		irqNumber=64+31;
-		goto emit_interrupt;
+		irqNumber=64 + 31;
 	}
 
 	/* Bit 8 in IRQBasic indicates interrupts in Pending1 (interrupts 31-0) */
-	if(tmp & 0x100) {
+	else if(ulMaskedStatus & 0x100) {
 		ulMaskedStatus = pRegs->Pending1;
 		irqNumber = 0 + 31;
-		// Clear the interrupts also available in basic IRQ pending reg.
-		ulMaskedStatus &= ~((1 << 7) | (1 << 9) | (1 << 10) | (1 << 18) | (1 << 19));
-		if(ulMaskedStatus) {
-			goto emit_interrupt;
-		}
 	}
 
 	/* Bit 9 in IRQBasic indicates interrupts in Pending2 (interrupts 63-32) */
-	if(tmp & 0x200) {
+	else if(ulMaskedStatus & 0x200) {
 		ulMaskedStatus = pRegs->Pending2;
 		irqNumber = 32 + 31;
-		// Clear the interrupts in the basic pending reg.
-		ulMaskedStatus &= ~((1 << 21) | (1 << 22) | (1 << 23) | (1 << 24) | (1 << 25) |(1 << 30));
-		if(ulMaskedStatus) {
-			goto emit_interrupt;
-		}
 	}
 
-	// No interrupt avaialbe (Wat)
-	return;
+	else {
+		// No interrupt avaialbe (Wat)
+		return;
+	}
 
-emit_interrupt:
-
-	/* Magic. Should be cleaned up and/or clarified. */
-	tmp = ulMaskedStatus - 1;
-	ulMaskedStatus = ulMaskedStatus ^ tmp;
-	tmp = clz(ulMaskedStatus);
-	irqNumber = irqNumber - tmp;
-
+	/* Keep only least significant bit, in case multiple interrupts have occured */
+	ulMaskedStatus&=-ulMaskedStatus;
+	/* Some magic to determine number of interrupt to serve */
+	irqNumber=irqNumber-clz(ulMaskedStatus);
+	/* Call interrupt handler */
 	g_VectorTable[irqNumber].pfnHandler(irqNumber, g_VectorTable[irqNumber].pParam);
-
 }
 
 
