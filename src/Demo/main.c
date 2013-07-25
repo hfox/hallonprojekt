@@ -45,9 +45,10 @@ void main(void) {
 
 	puts("Test - Character echo\r");
 
-	/* Code entry point, task handle, stack word depth, arguments, priority, handle pointer */
-	xTaskCreate(echo_task, "ECHO", 128, NULL, 0, NULL);
-	xTaskCreate(led_task, "LED", 128, NULL, 1, NULL);
+	/* Code entry point, task handle, stack word depth, arguments,
+	 * priority, handle pointer */
+	xTaskCreate(echo_task, "ECHO", 128, NULL, 1, NULL);
+	xTaskCreate(led_task, "LED", 128, NULL, 2, NULL);
 
 	vTaskStartScheduler();
 
