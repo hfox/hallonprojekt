@@ -16,6 +16,7 @@ enum DETECT_TYPE {
 void EnableGpioDetect(unsigned int pinNum, enum DETECT_TYPE type);
 void DisableGpioDetect(unsigned int pinNum, enum DETECT_TYPE type);
 
+void ClearGpioInterrupt(unsigned int pinNum);
 
 
 

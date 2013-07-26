@@ -49,12 +49,12 @@ void SetGpioFunction(unsigned int pinNum, unsigned int funcNum) {
 }
 
 void SetGpio(unsigned int pinNum, unsigned int pinVal) {
-	int offset = pinNum / 32;
+	unsigned long mask=(1<<pinNum);
 
 	if(pinVal) {
-		pRegs->GPSET[offset] = 1 << (pinNum % 32);		
+		*((unsigned long*)(pRegs->GPSET))|=mask;
 	} else {
-		pRegs->GPCLR[offset] = 1 << (pinNum % 32);
+		*((unsigned long*)(pRegs->GPCLR))|=mask;
 	}
 }
 
@@ -92,3 +92,8 @@ void DisableGpioDetect(unsigned int pinNum, enum DETECT_TYPE type)
 	}
 }
 
+void ClearGpioInterrupt(unsigned int pinNum)
+{
+	unsigned long mask=(1<<pinNum);
+	*((unsigned long*)(pRegs->GPEDS))=mask;
+}
