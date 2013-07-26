@@ -1,3 +1,6 @@
+#undef POLLING_UART
+#define IRQ_UART
+
 /* For EOF */
 #include <stdio.h>
 
@@ -81,6 +84,7 @@ int WriteUART(int ch)
 	return ch;
 }
 
+#ifdef POLLING_UART
 /* Blocking version */
 int ReadUART_BLOCK(void)
 {
@@ -96,7 +100,9 @@ int ReadUART_BLOCK(void)
 	/* Return the character */
 	return read;
 }
+#endif /*POLLING_UART*/
 
+#ifdef IRQ_UART
 /* Interrupt driven version */
 int ReadUART(void)
 {
@@ -131,3 +137,4 @@ int ReadUART(void)
 	/* Return the character */
 	return read;
 }
+#endif /*IRQ_UART*/
